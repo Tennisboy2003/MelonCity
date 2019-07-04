@@ -1,0 +1,168 @@
+package net.Tennisboy2003.main;
+
+import java.io.File;
+import java.io.IOException;
+
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import net.Tennisboy2003.adminshop.Blocks;
+import net.Tennisboy2003.cmd.BoosterCMD;
+import net.Tennisboy2003.cmd.VillagerCMD;
+import net.Tennisboy2003.features.AdminShop;
+import net.Tennisboy2003.features.Booster;
+import net.milkbowl.vault.economy.Economy;
+
+public class Main extends JavaPlugin {
+
+	public static Main instance;	
+	public Main() {
+		instance = this;
+	}
+	public static Main getInstance() {
+		return instance;
+	}
+	public static Main plugin;
+	
+	static Economy eco = null;
+	
+	public static File p = null;
+	public static YamlConfiguration ply = new YamlConfiguration();
+	
+	public static File c = null;
+	public static YamlConfiguration cfg = new YamlConfiguration();
+	
+	public static String pfx = "§8[§2MelonFeatures§8] ";
+	
+	public void onEnable() {
+		
+		plugin = this;
+		p = new File(this.getDataFolder(), "booster.yml");
+		c = new File(this.getDataFolder(), "config.yml");
+		
+		mkdir();
+		loadYamls();
+		
+		getCommand("booster").setExecutor(new BoosterCMD());
+		getCommand("setadminshop").setExecutor(new VillagerCMD());
+		
+		Bukkit.getPluginManager().registerEvents(new Booster(), this);
+		Bukkit.getPluginManager().registerEvents(new AdminShop(), this);
+		Bukkit.getPluginManager().registerEvents(new Blocks(), this);
+		
+		if(setupEconomy()) {
+			Bukkit.getConsoleSender().sendMessage(pfx + "§2Vault wurde gefunden.");
+		} else {
+			Bukkit.getConsoleSender().sendMessage(pfx + "§4Vault wurde nicht gefunden.");
+		}
+		
+		Bukkit.getConsoleSender().sendMessage(pfx + "§2Das System wurde erfolgreich hochgefahren!");
+	}
+	
+	public boolean setupEconomy() {
+		if(getServer().getPluginManager().getPlugin("Vault") == null) {
+			return false;
+		}
+		
+		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+		if(rsp == null) {
+			return false;
+		}
+		eco = rsp.getProvider();
+		return eco != null;
+		
+	}
+	
+	public void onDisable() {
+		Booster.disableFlyBoost();
+		saveP();
+		Bukkit.getConsoleSender().sendMessage(pfx + "§2Speichere alle Daten, System wird runtergefahren!");
+	}
+	
+	public void mkdir() {
+		if(!p.exists())
+		{
+			try {
+				p.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			try {
+				ply.load(p);;
+			} catch(IOException | InvalidConfigurationException e) {
+				e.printStackTrace();
+			}
+			saveP();
+		}
+		
+		if(!c.exists())
+		{
+			try {
+				p.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				cfg.load(c);;
+			} catch(IOException | InvalidConfigurationException e) {
+				e.printStackTrace();
+			}
+			saveC();
+		}
+	}
+	
+	public void loadYamls()
+	{
+		try {
+			ply.load(p);;
+		} catch(IOException | InvalidConfigurationException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			cfg.load(c);;
+		} catch(IOException | InvalidConfigurationException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void saveP()
+	{
+		try {
+			ply.save(p);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void saveC()
+	{
+		try {
+			cfg.save(c);
+		} catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static void removeMoney(Player p, int amount) {
+		eco.withdrawPlayer(p, amount);
+	}
+	
+	public static void addMoney(Player p, int amount) {
+		eco.depositPlayer(p, amount);
+	}
+	
+	public static Boolean hasenaughmoney(Player p, double d) {
+		if(eco.getBalance(p) >= d) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+}
